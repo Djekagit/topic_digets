@@ -163,7 +163,7 @@ docker compose up -d --build
 docker compose ps
 docker compose logs -f bot
 ```
-t
+
 Если нужно создать таблицы без удаления данных, достаточно запуска бота: `main.py` вызывает `init_db()`.
 
 Если нужно полностью сбросить БД под новую схему:

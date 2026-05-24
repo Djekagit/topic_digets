@@ -7,11 +7,28 @@ from storage.models import DigestGroup, Post
 from storage.requests.ai_settings import get_ai_settings
 
 
+TELEGRAM_MARKDOWN_SYSTEM_PROMPT = (
+    "Ты пишешь готовые сообщения для Telegram. Отвечай строго в формате Telegram MarkdownV2. "
+    "Верни только финальный дайджест без вступления, без фраз вроде 'Конечно' или "
+    "'Вот дайджест', без послесловий, предложений продолжить и горизонтальных разделителей. "
+    "Используй кликабельные ссылки в формате [текст](https://example.com). "
+    "Не используй HTML, Markdown-таблицы и заголовки через #. "
+    "Экранируй спецсимволы MarkdownV2 там, где они не являются частью разметки."
+)
+
+
 def build_prompt(*, default_prompt: str, custom_prompt: str | None, posts_text: str) -> str:
     template = custom_prompt.strip() if custom_prompt and custom_prompt.strip() else default_prompt
     if "{posts}" in template:
         return template.replace("{posts}", posts_text)
     return f"{template}\n\nПосты:\n{posts_text}"
+
+
+def build_chat_messages(prompt: str) -> list[dict[str, str]]:
+    return [
+        {"role": "system", "content": TELEGRAM_MARKDOWN_SYSTEM_PROMPT},
+        {"role": "user", "content": prompt},
+    ]
 
 
 class OpenRouterSummarizer:
@@ -31,7 +48,7 @@ class OpenRouterSummarizer:
             )
             response = await client.chat.completions.create(
                 model=model,
-                messages=[{"role": "user", "content": prompt}],
+                messages=build_chat_messages(prompt),
             )
         return response.choices[0].message.content or ""
 

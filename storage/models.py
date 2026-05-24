@@ -7,9 +7,21 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from core.settings import settings
 
 
-DEFAULT_PROMPT = (
+LEGACY_DEFAULT_PROMPT = (
     "Сделай краткий дайджест постов. Сгруппируй похожие новости, выдели важное, "
     "оставь ссылки на оригиналы. Посты:\n{posts}"
+)
+
+
+DEFAULT_PROMPT = (
+    "Сделай краткий дайджест постов для Telegram в формате Telegram MarkdownV2. "
+    "Верни только сам дайджест без вступления, без фраз вроде 'Конечно' или 'Вот дайджест', "
+    "без послесловия и без предложений продолжить. "
+    "Сгруппируй похожие новости, выдели главное жирным, сохрани важные детали. "
+    "Ссылки оформляй как кликабельный Markdown: [текст](https://example.com). "
+    "Не используй HTML, Markdown-таблицы, заголовки через # и разделители вроде ---. "
+    "Экранируй спецсимволы MarkdownV2 вне синтаксиса ссылок и выделения. "
+    "Посты:\n{posts}"
 )
 
 
@@ -116,6 +128,10 @@ async def ensure_default_ai_settings(session) -> AISettings:
     result = await session.execute(select(AISettings).where(AISettings.provider == "openrouter"))
     ai_settings = result.scalar_one_or_none()
     if ai_settings:
+        if ai_settings.default_prompt == LEGACY_DEFAULT_PROMPT:
+            ai_settings.default_prompt = DEFAULT_PROMPT
+            ai_settings.updated_at = utcnow()
+            await session.flush()
         return ai_settings
 
     ai_settings = AISettings(

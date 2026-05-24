@@ -13,4 +13,4 @@ async def save_send(text: str, bot: Bot, chat_id: int) -> None:
 
     for index in range(parts_count):
         chunk = text[index * limit : (index + 1) * limit]
-        await bot.send_message(chat_id=chat_id, text=chunk, parse_mode=ParseMode.HTML)
+        await bot.send_message(chat_id=chat_id, text=chunk, parse_mode=ParseMode.MARKDOWN_V2)
